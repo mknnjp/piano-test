@@ -1,0 +1,853 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#F4F5F1">
+<title>音符よみ練習</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Klee+One:wght@600&family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+  :root {
+    --paper: #F4F5F1;      /* 五線ノートの紙 */
+    --ink: #1F2329;        /* 譜面のインク */
+    --line: #3B4048;       /* 五線 */
+    --muted: #6B7079;
+    --rule: #C3C7C0;       /* 解答欄の罫 */
+    --red: #D7262F;        /* 赤ペン */
+    --key: #FFFFFF;
+    --key-down: #E4E6E1;
+    --black-key: #24272C;
+    --hand: "Klee One", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
+    font-weight: 500;
+    line-height: 1.6;
+    -webkit-tap-highlight-color: transparent;
+  }
+  [hidden] { display: none !important; }
+
+  .sheet {
+    max-width: 560px;
+    margin: 0 auto;
+    padding: max(16px, env(safe-area-inset-top)) 16px max(20px, env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    min-height: 100dvh;
+  }
+  @media (min-width: 640px) {
+    .sheet { min-height: 0; padding-top: 48px; }
+  }
+
+  .top { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+  h1 { font-size: 1.125rem; font-weight: 700; margin: 0; letter-spacing: .06em; }
+  .toggle {
+    font: inherit; font-size: .875rem; color: var(--ink);
+    background: transparent; border: 1px solid var(--rule); border-radius: 6px;
+    padding: 3px 12px; cursor: pointer;
+  }
+  .toggle[aria-pressed="false"] { color: var(--muted); }
+  .toggle:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+  /* 出題モード */
+  .modebar {
+    display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 4px 16px;
+    margin-top: 12px; border-bottom: 1px solid var(--rule);
+  }
+  .modes { display: flex; gap: 20px; }
+  .accs { display: flex; align-items: center; gap: 6px; padding-bottom: 6px; }
+  .accs-label { font-size: .8125rem; color: var(--muted); margin-right: 2px; }
+  .acc-toggle {
+    width: 34px; height: 30px; padding: 0;
+    font: inherit; font-size: 1.0625rem; line-height: 1; color: var(--muted);
+    background: transparent; border: 1px solid var(--rule); border-radius: 6px;
+    cursor: pointer;
+  }
+  .acc-toggle[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--paper); }
+  .acc-toggle:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+  .mode {
+    appearance: none; background: none; border: 0; margin: 0 0 -1px;
+    border-bottom: 2px solid transparent;
+    padding: 6px 0 7px;
+    font: inherit; font-size: .9375rem; color: var(--muted);
+    cursor: pointer; white-space: nowrap;
+  }
+  .mode[aria-checked="true"] { color: var(--ink); font-weight: 700; border-bottom-color: var(--ink); }
+  .mode:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+
+  /* 解答欄とタイマー */
+  .status { display: flex; align-items: center; gap: 12px; margin-top: 14px; }
+  .answers {
+    list-style: none; margin: 0; padding: 0;
+    flex: 1 1 auto; max-width: 300px;
+    display: grid; grid-template-columns: repeat(10, 1fr);
+    border: 1px solid var(--rule);
+    background: #fff;
+  }
+  .answers li { aspect-ratio: 1; position: relative; border-left: 1px solid var(--rule); }
+  .answers li:first-child { border-left: 0; }
+  .answers li.now { box-shadow: inset 0 -3px 0 var(--ink); }
+  .answers svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+  .timer {
+    margin: 0 0 0 auto; min-width: 5em; text-align: right;
+    font-size: 1.125rem; font-variant-numeric: tabular-nums; letter-spacing: .02em;
+  }
+
+  .stage { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 12px 0 18px; }
+  #staff { display: block; width: 100%; height: auto; overflow: visible; }
+  .msg { margin: 2px 0 0; text-align: center; font-size: 1.0625rem; min-height: 1.8em; }
+  .msg .name { font-family: var(--hand); color: var(--red); font-size: 1.3rem; margin: 0 .3em; }
+  .msg .pts { color: var(--muted); font-size: .9375rem; margin-left: .5em; font-variant-numeric: tabular-nums; }
+
+  /* 鍵盤 */
+  .keys {
+    position: relative;
+    display: grid; grid-template-columns: repeat(8, 1fr);
+    height: clamp(150px, 40vw, 196px);
+    border-top: 5px solid var(--ink);
+    user-select: none; -webkit-user-select: none;
+    touch-action: manipulation;
+  }
+  .key {
+    position: relative;
+    appearance: none; margin: 0; padding: 0 0 14px;
+    background: var(--key);
+    border: 1px solid var(--line); border-top: 0; border-left-width: 0;
+    border-radius: 0 0 6px 6px;
+    box-shadow: inset 0 -6px 0 #E9EBE7;
+    display: flex; align-items: flex-end; justify-content: center;
+    font-family: var(--hand); font-size: clamp(1.05rem, 4.6vw, 1.35rem); color: var(--ink);
+    cursor: pointer;
+  }
+  .key:first-child { border-left-width: 1px; }
+  .key:active, .key.down { background: var(--key-down); box-shadow: inset 0 -2px 0 #D9DCD6; }
+  .key:focus-visible { outline: 3px solid var(--ink); outline-offset: -7px; }
+  .key.picked-wrong { color: var(--muted); }
+  .key.is-answer { color: var(--red); }
+
+  .black {
+    position: absolute; top: 0; z-index: 1;
+    width: calc(100% / 8 * .6); height: 57%;
+    transform: translateX(-50%);
+    appearance: none; margin: 0; padding: 0 0 10px; border: 0;
+    background: var(--black-key);
+    border-radius: 0 0 4px 4px;
+    box-shadow: inset 0 -5px 0 #3A3E45;
+    display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
+    font-family: var(--hand); font-size: clamp(11px, 3.2vw, 14px); line-height: 1.2; color: #E9EBE7;
+    cursor: pointer;
+  }
+  .black:disabled { pointer-events: none; cursor: default; }
+  .black:not(:disabled):active, .black.down { background: #3A3E45; box-shadow: inset 0 -2px 0 #4A4F57; }
+  .black:focus-visible { outline: 2px solid var(--paper); outline-offset: -5px; }
+  .black.picked-wrong { color: #868B93; }
+  .black.is-answer { color: #FF9AA0; }
+  .black .sym { font-size: 1.15em; }
+
+  .ring { position: absolute; left: 50%; transform: translateX(-50%); overflow: visible; pointer-events: none; }
+  .key .ring { bottom: 2px; width: 56px; height: 44px; }
+  .black .ring { bottom: 2px; width: 40px; height: 48px; }
+
+  .hint { display: none; margin: 14px 0 0; text-align: center; font-size: .8125rem; color: var(--muted); }
+  @media (hover: hover) and (pointer: fine) { .hint { display: block; } }
+
+  /* 結果 */
+  .result { text-align: center; padding-top: 8px; }
+  .score { margin: 0; font-family: var(--hand); color: var(--red); font-size: 4.25rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .score small { font-size: .42em; margin-left: .08em; }
+  .sub { margin: 4px 0 0; color: var(--muted); font-size: .9375rem; }
+  .best { margin: 2px 0 0; font-size: .9375rem; }
+  .best.new { color: var(--red); }
+  .review-label { margin: 20px 0 0; font-size: .9375rem; }
+  .review { display: block; width: 100%; height: auto; margin-top: 2px; overflow: visible; }
+  .review-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 0 14px; margin-top: 6px; }
+  .review-grid svg { display: block; width: 100%; height: auto; overflow: visible; }
+
+  .action {
+    font: inherit; font-weight: 700; font-size: 1rem;
+    width: 100%; height: 56px;
+    border: 0; border-radius: 6px;
+    background: var(--ink); color: var(--paper);
+    cursor: pointer;
+  }
+  .action:focus-visible { outline: 3px solid var(--ink); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main class="sheet">
+  <header class="top">
+    <h1>音符よみ練習</h1>
+    <button class="toggle" id="sound" type="button" aria-pressed="true">音：オン</button>
+  </header>
+
+  <div class="modebar">
+    <div class="modes" id="modes" role="radiogroup" aria-label="出題モード">
+      <button class="mode" type="button" role="radio" data-mode="treble">ト音記号</button>
+      <button class="mode" type="button" role="radio" data-mode="bass">ヘ音記号</button>
+      <button class="mode" type="button" role="radio" data-mode="mix">まぜる</button>
+    </div>
+    <div class="accs" role="group" aria-label="調号">
+      <span class="accs-label" aria-hidden="true">調号</span>
+      <button class="acc-toggle" type="button" data-acc="sharp" aria-pressed="false" aria-label="♯の調号を出す">♯</button>
+      <button class="acc-toggle" type="button" data-acc="flat" aria-pressed="false" aria-label="♭の調号を出す">♭</button>
+    </div>
+  </div>
+
+  <div class="status">
+    <ol class="answers" id="answers" aria-label="解答欄"></ol>
+    <p class="timer" id="timer" aria-label="経過時間">0.0秒</p>
+  </div>
+
+  <section class="stage">
+    <svg id="staff" role="img" aria-label="五線譜"></svg>
+    <p class="msg" id="msg" aria-live="polite"></p>
+    <div class="result" id="result" hidden></div>
+  </section>
+
+  <div class="keys" id="keys" role="group" aria-label="答えを選ぶ" hidden></div>
+  <button class="action" id="action" type="button">スタート</button>
+  <p class="hint" id="hint"></p>
+</main>
+
+<script>
+(() => {
+  "use strict";
+
+  // 記号の形（Noto Music / SIL OFL 1.1 のグリフ輪郭）
+  const G_CLEF = "M314 801Q300 854 291.0 906.0Q282 958 282 1012Q282 1059 288.5 1100.5Q295 1142 307 1177Q320 1217 341.0 1252.5Q362 1288 385.5 1311.0Q409 1334 427 1334Q451 1334 493 1249Q514 1206 524.0 1156.0Q534 1106 534 1049Q534 978 515.0 907.5Q496 837 459.5 775.0Q423 713 372 666L407 498Q422 500 432.0 501.0Q442 502 447 502Q508 502 556.0 467.5Q604 433 632.5 377.0Q661 321 661 254Q661 177 621.5 115.5Q582 54 503 25Q508 8 532 -117Q538 -147 541.0 -164.5Q544 -182 545.0 -195.0Q546 -208 546 -225Q546 -275 521.5 -314.5Q497 -354 455.5 -376.0Q414 -398 363 -398Q311 -398 271.0 -378.5Q231 -359 208.0 -324.5Q185 -290 185 -245Q185 -197 211.5 -165.0Q238 -133 287 -133Q329 -133 355.5 -163.5Q382 -194 382 -236Q382 -272 357.0 -299.0Q332 -326 292 -326H282Q308 -365 364 -365Q433 -365 472.0 -320.0Q511 -275 511 -205Q511 -188 507.0 -159.5Q503 -131 493 -91Q483 -51 477.5 -25.0Q472 1 470 12Q436 2 390 2Q304 2 222 52Q142 102 96.0 184.0Q50 266 50 361Q50 451 91 530Q132 609 192.5 675.0Q253 741 314 801ZM341 826Q364 838 390.0 870.5Q416 903 440.0 945.0Q464 987 479.0 1029.5Q494 1072 494 1106Q494 1142 483.0 1163.0Q472 1184 445 1184Q421 1184 398.5 1162.0Q376 1140 358.5 1103.5Q341 1067 331.0 1022.0Q321 977 321 930Q321 898 327.5 872.0Q334 846 341 826ZM398 379Q371 373 347.0 353.5Q323 334 308.5 306.5Q294 279 294 248Q294 223 307.0 196.5Q320 170 339 154Q352 142 365 136Q380 129 380 123Q380 120 370 117Q332 126 301.5 151.0Q271 176 253.5 211.5Q236 247 236 287Q236 330 253.5 370.0Q271 410 302.5 442.0Q334 474 374 490L345 641Q229 547 174.5 456.5Q120 366 120 277Q120 212 154.0 156.0Q188 100 247.0 65.5Q306 31 380 31Q400 31 420.5 35.0Q441 39 464 45ZM495 55Q593 97 593 227Q593 270 571.0 305.5Q549 341 512.0 362.0Q475 383 429 383Z";
+  const F_CLEF = "M50 123Q216 231 288 301Q336 348 373.0 408.5Q410 469 431.5 536.0Q453 603 453 669Q453 728 435.0 773.5Q417 819 383.0 845.0Q349 871 302 871Q284 871 264.5 867.0Q245 863 224 855Q181 839 158.0 813.5Q135 788 135 765Q135 756 143.0 752.0Q151 748 158 748Q168 748 183 752Q190 754 196.5 755.0Q203 756 210 756Q248 756 272.0 733.5Q296 711 296 674Q296 638 266.0 612.0Q236 586 195 586Q146 586 111.0 617.0Q76 648 76 697Q76 756 109.0 802.0Q142 848 198.5 874.0Q255 900 324 900Q400 900 460.0 867.0Q520 834 555.5 776.5Q591 719 591 646Q591 551 538 464Q511 419 476.5 379.0Q442 339 389.0 297.5Q336 256 256.0 208.0Q176 160 57 101ZM687 809Q710 809 726.0 793.0Q742 777 742 754Q742 731 726.0 715.5Q710 700 687 700Q664 700 648.0 715.5Q632 731 632 754Q632 777 648.0 793.0Q664 809 687 809ZM687 589Q710 589 726.0 573.0Q742 557 742 534Q742 511 726.0 495.5Q710 480 687 480Q664 480 648.0 495.5Q632 511 632 534Q632 557 648.0 573.0Q664 589 687 589Z";
+  const WHOLE_D = "M50 135Q50 172 77.0 200.0Q104 228 150.5 244.0Q197 260 253 260Q310 260 358.0 244.5Q406 229 435.0 201.0Q464 173 464 135Q464 96 436.0 67.5Q408 39 361.5 23.5Q315 8 259 8Q203 8 155.5 23.0Q108 38 79.0 66.5Q50 95 50 135ZM280 28Q314 28 326.5 53.0Q339 78 339 112Q339 147 324.5 176.0Q310 205 286.0 222.5Q262 240 232 240Q198 240 186.5 215.0Q175 190 175 156Q175 122 189.0 93.0Q203 64 226.5 46.0Q250 28 280 28Z";
+  const SHARP_D = "M97 46V189L50 177V277L97 290V486H128V298L195 314V509H226V322L275 333V234L226 220V77L275 89V-14L226 -26V-214H195V-34L128 -52V-247H97V-59L50 -71V32ZM195 70V214L128 197V54Z";
+  const FLAT_D = "M50 615H81V225Q118 262 165 262Q197 262 223.0 240.5Q249 219 249 178Q249 146 230.0 119.0Q211 92 179 65L110 6Q91 -10 76.0 -25.5Q61 -41 50 -55ZM81 12Q107 40 125.0 63.5Q143 87 153 105Q164 124 169.5 140.0Q175 156 175 170Q175 198 162.0 210.5Q149 223 134 223Q118 223 102.5 211.5Q87 200 81 180Z";
+
+  const NS = "http://www.w3.org/2000/svg";
+  const SP = 20;          // 五線の間隔(px)
+  const BOTTOM = 160;     // 第1線のy
+  const U = SP / 250;     // フォント単位→px（1間 = 250単位）
+  const GLYPH_MID = 134;  // 音符・♯・♭の「中心の高さ」（フォント単位）
+  const ROUND = 10;       // 1セットの問題数
+  const NOTE_X = 186;     // 出題の音符のx
+  const STAFF_W = 320;    // 出題の譜面の幅
+
+  // 採点：1問100点。1.5秒までは満点、そこから1秒ごとに10点減る（正解なら最低40点）。不正解は0点
+  const FULL_SEC = 1.5, PER_SEC = 10, MIN_PTS = 40;
+  const pointsFor = (ok, sec) => ok ? Math.max(MIN_PTS, Math.min(100, Math.round(100 - Math.max(0, sec - FULL_SEC) * PER_SEC))) : 0;
+
+  // shift: 音符の位置のずれ / octave: 鳴らす音の高さ / sigX: 調号の書き始め / sigShift: 調号の位置のずれ
+  // ト音記号は ド4〜ド5、ヘ音記号は ド3〜ド4（真ん中のド）
+  const CLEFS = {
+    treble: { d: G_CLEF, shift: 0, octave: 1,   sigX: 70, sigShift: 0,  name: "ト音記号" },
+    bass:   { d: F_CLEF, shift: 5, octave: 0.5, sigX: 76, sigShift: -2, name: "ヘ音記号" },
+  };
+  const MODES = ["treble", "bass", "mix"];
+
+  // step: 第1線を0として、線と間を1つずつ数えた位置（ト音記号のとき）
+  const NOTES = [
+    { name: "ド",   short: "低いド", long: "低いほうのド", step: -2, letter: "C" },
+    { name: "レ",   step: -1, letter: "D" },
+    { name: "ミ",   step: 0,  letter: "E" },
+    { name: "ファ", step: 1,  letter: "F" },
+    { name: "ソ",   step: 2,  letter: "G" },
+    { name: "ラ",   step: 3,  letter: "A" },
+    { name: "シ",   step: 4,  letter: "B" },
+    { name: "ド",   short: "高いド", long: "高いほうのド", step: 5, letter: "C" },
+  ];
+  const WHITE_SEMI = [0, 2, 4, 5, 7, 9, 11, 12];               // 白鍵：低いドからの半音の数
+  const BLACK_KEYS = [                                         // 黒鍵：after = 何本目の白鍵の右か
+    { semi: 1,  after: 1, sharp: ["ド", "♯"],   flat: ["レ", "♭"] },
+    { semi: 3,  after: 2, sharp: ["レ", "♯"],   flat: ["ミ", "♭"] },
+    { semi: 6,  after: 4, sharp: ["ファ", "♯"], flat: ["ソ", "♭"] },
+    { semi: 8,  after: 5, sharp: ["ソ", "♯"],   flat: ["ラ", "♭"] },
+    { semi: 10, after: 6, sharp: ["ラ", "♯"],   flat: ["シ", "♭"] },
+  ];
+
+  // 調号：♯は ファ→ド→ソ→レ…、♭は シ→ミ→ラ→レ… の順につく
+  const MAX_KEY = 4;                            // ♯・♭は4つまで
+  const SHARP_ORDER = ["F", "C", "G", "D", "A", "E", "B"];
+  const FLAT_ORDER  = ["B", "E", "A", "D", "G", "C", "F"];
+  const SHARP_POS = [8, 5, 9, 6, 3, 7, 4];      // ト音記号での位置（第1線=0）
+  const FLAT_POS  = [4, 7, 3, 6, 2, 5, 1];
+  const SHARP_STEP = 19, FLAT_STEP = 17;        // 並べる間隔(px)
+
+  // key: +n なら♯がn個、-n なら♭がn個、0 は調号なし
+  const accOf = (key, n) => {
+    const letter = NOTES[n].letter;
+    if (key > 0) return SHARP_ORDER.slice(0, key).includes(letter) ? 1 : 0;
+    if (key < 0) return FLAT_ORDER.slice(0, -key).includes(letter) ? -1 : 0;
+    return 0;
+  };
+  const symOf = (acc) => (acc > 0 ? "♯" : acc < 0 ? "♭" : "");
+
+  const KEY_SEMI = { a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11, k: 12 };
+
+  const $ = (s) => document.querySelector(s);
+  const staffEl = $("#staff"), msgEl = $("#msg"), keysEl = $("#keys");
+  const answersEl = $("#answers"), resultEl = $("#result"), timerEl = $("#timer");
+  const actionBtn = $("#action"), soundBtn = $("#sound"), hintEl = $("#hint");
+  const modeBtns = [...document.querySelectorAll(".mode")];
+  const accBtns = [...document.querySelectorAll(".acc-toggle")];
+  const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)");
+
+  const show = (node, on) => node.toggleAttribute("hidden", !on);
+  const posOf = (q) => NOTES[q.n].step + CLEFS[q.clef].shift;
+  const yOf = (pos) => BOTTOM - pos * SP / 2;
+  const targetSemi = (q) => WHITE_SEMI[q.n] + q.acc;
+  const freqOf = (clef, semi) => 261.63 * Math.pow(2, semi / 12) * CLEFS[clef].octave;
+  const fullName = (i) => NOTES[i].long || NOTES[i].name;
+  const shortName = (i) => NOTES[i].short || NOTES[i].name;
+  // 問題の音の名前（♯・♭がつくときは「ファ♯」のように）
+  const qName = (q) => (q.acc ? NOTES[q.n].name + symOf(q.acc) : fullName(q.n));
+  const qLabel = (q) => (q.acc ? NOTES[q.n].name + symOf(q.acc) : shortName(q.n));
+  // 押した鍵盤の名前（黒鍵は、調号が♭なら♭の名前で呼ぶ）
+  const semiName = (semi, key) => {
+    const w = WHITE_SEMI.indexOf(semi);
+    if (w >= 0) return shortName(w);
+    const b = BLACK_KEYS.find((k) => k.semi === semi);
+    return (key < 0 ? b.flat : b.sharp).join("");
+  };
+  const fmtSec = (ms) => (ms / 1000).toFixed(1) + "秒";
+
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} },
+  };
+
+  function el(tag, attrs, parent) {
+    const n = document.createElementNS(NS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(n);
+    return n;
+  }
+
+  // ---------- 譜面 ----------
+  // notes: [{ n, x }] / key: 調号。戻り値の sig は調号の各記号の位置
+  function drawStaff(svg, width, clef, notes, key = 0) {
+    svg.replaceChildren();
+    svg.setAttribute("viewBox", `0 34 ${width} 176`);
+    const g = el("g", {}, svg);
+    for (let i = 0; i < 5; i++) {
+      const y = BOTTOM - i * SP;
+      el("line", { x1: 6, x2: width - 6, y1: y, y2: y, stroke: "var(--line)", "stroke-width": 1.6 }, g);
+    }
+    el("path", { d: CLEFS[clef].d, fill: "var(--ink)", transform: `translate(10 ${BOTTOM}) scale(${U} ${-U})` }, g);
+    const sig = drawKeySig(g, clef, key);
+    for (const n of notes) drawNote(g, posOf({ clef, n: n.n }), n.x);
+    return { g, sig };
+  }
+
+  function drawKeySig(g, clef, key) {
+    const items = [];
+    const c = CLEFS[clef];
+    if (!key) return { items, end: c.sigX };
+    const sharp = key > 0;
+    const order = sharp ? SHARP_ORDER : FLAT_ORDER;
+    const posList = sharp ? SHARP_POS : FLAT_POS;
+    const stepX = sharp ? SHARP_STEP : FLAT_STEP;
+    const glyphW = sharp ? 18 : 16;
+    for (let i = 0; i < Math.abs(key); i++) {
+      const y = yOf(posList[i] + c.sigShift);
+      const x = c.sigX + i * stepX;
+      el("path", { d: sharp ? SHARP_D : FLAT_D, fill: "var(--ink)", transform: `translate(${x} ${y + GLYPH_MID * U}) scale(${U} ${-U})` }, g);
+      // 赤丸用の中心と大きさ（♭は下のふくらみが線・間に乗り、上に棒がのびる）
+      items.push({ letter: order[i], cx: x + 4 + glyphW / 2, cy: sharp ? y : y - 11, rx: 13, ry: sharp ? 27 : 25 });
+    }
+    return { items, end: c.sigX + Math.abs(key) * stepX + 6 };
+  }
+
+  function drawNote(g, pos, x) {
+    const ledger = [];
+    for (let p = -2; p >= pos; p -= 2) ledger.push(p);   // 下の加線
+    for (let p = 10; p <= pos; p += 2) ledger.push(p);   // 上の加線
+    for (const p of ledger) {
+      const ly = yOf(p);
+      el("line", { x1: x - 25, x2: x + 25, y1: ly, y2: ly, stroke: "var(--line)", "stroke-width": 2 }, g);
+    }
+    const y = yOf(pos);
+    el("path", { d: WHOLE_D, fill: "var(--ink)", transform: `translate(${x - 257 * U} ${y + GLYPH_MID * U}) scale(${U} ${-U})` }, g);
+  }
+
+  // ---------- 赤ペン ----------
+  function pen(parent, d, opt = {}) {
+    const p = el("path", {
+      d, fill: "none", stroke: opt.color || "var(--red)", "stroke-width": opt.width || 3.2,
+      "stroke-linecap": "round", "stroke-linejoin": "round",
+    }, parent);
+    if (!reduceMotion.matches && p.getTotalLength) {
+      const len = p.getTotalLength();
+      p.style.strokeDasharray = len;
+      p.style.strokeDashoffset = len;
+      p.animate([{ strokeDashoffset: len }, { strokeDashoffset: 0 }],
+        { duration: opt.dur || 260, delay: opt.delay || 0, easing: "cubic-bezier(.3,.7,.4,1)", fill: "forwards" });
+    }
+    return p;
+  }
+
+  // 手で描いたような、少しはみ出す丸
+  function handLoop(cx, cy, rx, ry) {
+    const N = 56;
+    const start = -Math.PI * (0.55 + Math.random() * 0.15);
+    const sweep = Math.PI * 2 * 1.1;
+    const ph1 = Math.random() * 6.28, ph2 = Math.random() * 6.28;
+    const tilt = (-11 + Math.random() * 6) * Math.PI / 180;
+    const ct = Math.cos(tilt), st = Math.sin(tilt);
+    let d = "";
+    for (let j = 0; j <= N; j++) {
+      const t = j / N, a = start + sweep * t;
+      const k = 1 + 0.04 * Math.sin(2 * a + ph1) + 0.025 * Math.sin(3 * a + ph2) + Math.max(0, t - 0.82) * 0.45;
+      const px = Math.cos(a) * rx * k, py = Math.sin(a) * ry * k;
+      d += (j ? " L" : "M") + (cx + px * ct - py * st).toFixed(1) + " " + (cy + px * st + py * ct).toFixed(1);
+    }
+    return d;
+  }
+
+  function checkMark(cx, cy, s = 1) {
+    return `M${cx - 15 * s} ${cy - 1 * s} Q${cx - 9 * s} ${cy + 5 * s} ${cx - 4 * s} ${cy + 15 * s} ` +
+           `Q${cx + 6 * s} ${cy - 8 * s} ${cx + 25 * s} ${cy - 27 * s}`;
+  }
+
+  // ---------- 音 ----------
+  let soundOn = store.get("onpu-sound") !== "off";
+  let actx = null;
+
+  function tone(freq, delay = 0) {
+    if (!soundOn) return;
+    try {
+      actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+      if (actx.state === "suspended") actx.resume();
+      const t = actx.currentTime + delay + 0.01;
+      const out = actx.createGain();
+      out.gain.setValueAtTime(0.0001, t);
+      out.gain.exponentialRampToValueAtTime(0.3, t + 0.008);
+      out.gain.exponentialRampToValueAtTime(0.0001, t + 1.5);
+      const lp = actx.createBiquadFilter();
+      lp.type = "lowpass";
+      lp.frequency.setValueAtTime(Math.max(freq * 7, 1200), t);
+      lp.frequency.exponentialRampToValueAtTime(Math.max(freq * 1.6, 500), t + 0.9);
+      for (const [mul, type, gain] of [[1, "triangle", 1], [2, "sine", 0.32], [3, "sine", 0.12], [4, "sine", 0.05]]) {
+        const o = actx.createOscillator(), g = actx.createGain();
+        o.type = type; o.frequency.value = freq * mul; g.gain.value = gain;
+        o.connect(g).connect(lp);
+        o.start(t); o.stop(t + 1.6);
+      }
+      lp.connect(out).connect(actx.destination);
+    } catch (e) {}
+  }
+
+  function renderSound() {
+    soundBtn.setAttribute("aria-pressed", String(soundOn));
+    soundBtn.textContent = soundOn ? "音：オン" : "音：オフ";
+  }
+  soundBtn.addEventListener("click", () => {
+    soundOn = !soundOn;
+    store.set("onpu-sound", soundOn ? "on" : "off");
+    renderSound();
+  });
+
+  // ---------- 鍵盤 ----------
+  const keyBySemi = {};
+  NOTES.forEach((n, i) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "key";
+    b.textContent = n.name;
+    b.setAttribute("aria-label", fullName(i));
+    b.addEventListener("click", () => answer(WHITE_SEMI[i]));
+    keysEl.appendChild(b);
+    keyBySemi[WHITE_SEMI[i]] = b;
+  });
+  for (const bk of BLACK_KEYS) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "black";
+    b.style.left = `calc(100% * ${bk.after} / 8)`;
+    b.addEventListener("click", () => answer(bk.semi));
+    keysEl.appendChild(b);
+    keyBySemi[bk.semi] = b;
+  }
+
+  // 黒鍵：♯と♭モードのときだけ答えに使う。名前は調号に合わせて♯か♭で表示
+  function setBlackKeys(enabled, key) {
+    for (const bk of BLACK_KEYS) {
+      const b = keyBySemi[bk.semi];
+      b.disabled = !enabled;
+      b.tabIndex = enabled ? 0 : -1;
+      b.toggleAttribute("aria-hidden", !enabled);
+      b.replaceChildren();
+      if (!enabled) { b.removeAttribute("aria-label"); continue; }
+      const [base, sym] = key < 0 ? bk.flat : bk.sharp;
+      const s1 = document.createElement("span");
+      s1.textContent = base;
+      const s2 = document.createElement("span");
+      s2.className = "sym";
+      s2.textContent = sym;
+      b.append(s1, s2);
+      b.setAttribute("aria-label", base + sym);
+    }
+  }
+
+  // ---------- 出題 ----------
+  const rand = (n) => Math.floor(Math.random() * n);
+  const pick = (a) => a[rand(a.length)];
+  function shuffle(a) {
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = rand(i + 1);
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  const halfAndHalf = () => shuffle(Array.from({ length: ROUND }, (_, i) => (i < ROUND / 2 ? "treble" : "bass")));
+  const sameQ = (a, b) => a.clef === b.clef && a.n === b.n && a.key === b.key;
+
+  // 調号ありの1問：オンになっている♯・♭から1つ選び（両方オンならどちらか）、数は1〜4個。
+  // 6割は調号がつく音、4割はつかない音を出す（「この音にはつかない」も見分ける練習）
+  function accQuestion(clef) {
+    const signs = [sharpOn && 1, flatOn && -1].filter(Boolean);
+    const key = (1 + rand(MAX_KEY)) * pick(signs);
+    // 高いド♯は鍵盤の外になるので出さない
+    const cands = [0, 1, 2, 3, 4, 5, 6, 7].filter((n) => !(n === 7 && accOf(key, n) > 0));
+    const marked = cands.filter((n) => accOf(key, n) !== 0);
+    const plain = cands.filter((n) => accOf(key, n) === 0);
+    const n = pick(Math.random() < 0.6 && marked.length ? marked : plain);
+    return { clef, n, key, acc: accOf(key, n) };
+  }
+
+  // 記号：ト音・ヘ音はその記号だけ、まぜるはト音5問・ヘ音5問
+  // 調号なし：ト音・ヘ音は8音を必ず1回ずつ＋ランダム2問、まぜるは音をランダム
+  // 調号あり：音と調号は上の accQuestion
+  // どれも、まったく同じ問題が続かないように並べる
+  function makeQueue(m) {
+    let items = [];
+    for (let tries = 0; tries < 200; tries++) {
+      if (accOn()) {
+        const clefs = m === "mix" ? halfAndHalf() : Array(ROUND).fill(m);
+        items = clefs.map(accQuestion);
+      } else if (m === "mix") {
+        items = halfAndHalf().map((clef) => ({ clef, n: rand(8), key: 0, acc: 0 }));
+      } else {
+        const bag = [0, 1, 2, 3, 4, 5, 6, 7];
+        while (bag.length < ROUND) bag.push(rand(8));
+        items = shuffle(bag).map((n) => ({ clef: m, n, key: 0, acc: 0 }));
+      }
+      if (items.every((q, i) => i === 0 || !sameQ(q, items[i - 1]))) break;
+    }
+    return items;
+  }
+
+  // ---------- 進行 ----------
+  let mode = MODES.includes(store.get("onpu-mode")) ? store.get("onpu-mode") : "treble";
+  let sharpOn = store.get("onpu-sharp") === "on";
+  let flatOn = store.get("onpu-flat") === "on";
+  if (store.get("onpu-mode") === "acc") {   // 前の版の「♯と♭」タブ → まぜる＋♯♭両方
+    mode = "mix"; sharpOn = flatOn = true;
+    store.set("onpu-mode", mode); store.set("onpu-sharp", "on"); store.set("onpu-flat", "on");
+  }
+  const accOn = () => sharpOn || flatOn;
+  let state = "ready";                 // ready → question ⇄ feedback → result
+  let queue = [], qi = 0, results = [];
+  let qStart = 0, totalMs = 0, tickId = 0, advanceId = 0;
+  let sigItems = [];                   // 今の問題の調号の位置（間違えたときに赤丸をつける）
+
+  function renderModes() {
+    for (const b of modeBtns) b.setAttribute("aria-checked", String(b.dataset.mode === mode));
+    for (const b of accBtns) b.setAttribute("aria-pressed", String(b.dataset.acc === "sharp" ? sharpOn : flatOn));
+    hintEl.textContent = accOn()
+      ? "白鍵 A S D F G H J K・黒鍵 W E T Y U で回答、Enter でスタート"
+      : "A S D F G H J K で回答、Enter でスタート";
+  }
+  for (const b of modeBtns) {
+    b.addEventListener("click", () => {
+      mode = b.dataset.mode;
+      store.set("onpu-mode", mode);
+      renderModes();
+      showReady();
+    });
+  }
+  for (const b of accBtns) {
+    b.addEventListener("click", () => {
+      if (b.dataset.acc === "sharp") sharpOn = !sharpOn;
+      else flatOn = !flatOn;
+      store.set("onpu-sharp", sharpOn ? "on" : "off");
+      store.set("onpu-flat", flatOn ? "on" : "off");
+      renderModes();
+      showReady();
+    });
+  }
+
+  function renderAnswers() {
+    answersEl.replaceChildren();
+    for (let i = 0; i < ROUND; i++) {
+      const li = document.createElement("li");
+      li.setAttribute("aria-label", `第${i + 1}問`);
+      el("svg", { viewBox: "0 0 30 30", "aria-hidden": "true" }, li);
+      answersEl.appendChild(li);
+    }
+  }
+
+  function renderTimer() {
+    const ms = totalMs + (state === "question" ? performance.now() - qStart : 0);
+    timerEl.textContent = fmtSec(ms);
+  }
+  function stopTick() { clearInterval(tickId); tickId = 0; }
+
+  function showReady() {
+    clearTimeout(advanceId);
+    stopTick();
+    state = "ready";
+    queue = makeQueue(mode);
+    qi = 0;
+    results = [];
+    totalMs = 0;
+    renderAnswers();
+    renderTimer();
+    show(resultEl, false);
+    show(keysEl, false);
+    show(staffEl, true);
+    show(msgEl, true);
+    show(actionBtn, true);
+    actionBtn.textContent = "スタート";
+    drawStaff(staffEl, STAFF_W, queue[0].clef, [], queue[0].key);
+    staffEl.setAttribute("aria-label", "五線譜");
+    msgEl.textContent = accOn()
+      ? "記号の横の♯・♭（調号）がつく音に注意。黒い鍵盤も使います"
+      : "全10問。1問100点で、速く答えるほど点が高くなります";
+  }
+
+  function start() {
+    show(actionBtn, false);
+    show(keysEl, true);
+    show(resultEl, false);
+    show(staffEl, true);
+    show(msgEl, true);
+    showQuestion();
+    stopTick();
+    tickId = setInterval(renderTimer, 100);
+  }
+
+  function showQuestion() {
+    for (const b of Object.values(keyBySemi)) {
+      b.classList.remove("picked-wrong", "is-answer", "down");
+      b.querySelector(".ring")?.remove();
+    }
+    [...answersEl.children].forEach((li, i) => li.classList.toggle("now", i === qi));
+    const q = queue[qi];
+    setBlackKeys(accOn(), q.key);
+    sigItems = drawStaff(staffEl, STAFF_W, q.clef, [{ n: q.n, x: NOTE_X }], q.key).sig.items;
+    const keyDesc = q.key ? `、調号は${symOf(q.key)}が${Math.abs(q.key)}つ` : "";
+    staffEl.setAttribute("aria-label", `第${qi + 1}問、${CLEFS[q.clef].name}${keyDesc}の音符`);
+    msgEl.textContent = "この音は？";
+    state = "question";
+    qStart = performance.now();
+  }
+
+  function setMsg(lead, name, extra) {
+    msgEl.replaceChildren(document.createTextNode(lead));
+    if (name) {
+      const s = document.createElement("span");
+      s.className = "name";
+      s.textContent = name;
+      msgEl.appendChild(s);
+    }
+    if (extra) {
+      const s = document.createElement("span");
+      s.className = "pts";
+      s.textContent = extra;
+      msgEl.appendChild(s);
+    }
+  }
+
+  function answer(semi) {
+    if (state !== "question") return;
+    if (!accOn() && !WHITE_SEMI.includes(semi)) return;
+    const ms = performance.now() - qStart;
+    totalMs += ms;
+    state = "feedback";
+    renderTimer();
+
+    const q = queue[qi];
+    const target = targetSemi(q);
+    const ok = semi === target;
+    const pts = pointsFor(ok, ms / 1000);
+    results.push({ ...q, chosen: semi, ok, ms, pts });
+
+    const btn = keyBySemi[semi];
+    btn.classList.add("down");
+    setTimeout(() => btn.classList.remove("down"), 140);
+    tone(freqOf(q.clef, semi));
+
+    const g = staffEl.querySelector("g");
+    const y = yOf(posOf(q));
+    const box = answersEl.children[qi].querySelector("svg");
+
+    if (ok) {
+      pen(g, handLoop(NOTE_X, y, 31, 23));
+      pen(box, handLoop(15, 15, 9.5, 9.5), { width: 2.2 });
+      setMsg("正解", qName(q), `${fmtSec(ms)}　${pts}点`);
+      advanceId = setTimeout(next, 850);
+      return;
+    }
+
+    pen(g, checkMark(NOTE_X, y));
+    const t = el("text", {
+      x: NOTE_X + 44, y: y + 9, fill: "var(--red)",
+      "font-family": "Klee One, Hiragino Maru Gothic ProN, sans-serif", "font-weight": 600, "font-size": 26,
+    }, g);
+    t.textContent = qLabel(q);
+    if (!reduceMotion.matches) t.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 200, delay: 200, fill: "backwards" });
+    pen(box, checkMark(15, 16, 0.5), { width: 2.2 });
+
+    // この音にかかっている調号の記号に赤丸
+    if (q.acc) {
+      const s = sigItems.find((it) => it.letter === NOTES[q.n].letter);
+      if (s) pen(g, handLoop(s.cx, s.cy, s.rx, s.ry), { width: 2.6, delay: 250 });
+    }
+
+    btn.classList.add("picked-wrong");
+    const right = keyBySemi[target];
+    right.classList.add("is-answer");
+    const black = right.classList.contains("black");
+    const ring = el("svg", { class: "ring", viewBox: black ? "0 0 40 48" : "0 0 56 44", "aria-hidden": "true" }, right);
+    pen(ring, black ? handLoop(20, 26, 15, 21) : handLoop(28, 27, 21, 15),
+      { width: 2.6, delay: 180, color: black ? "#FF6B72" : undefined });
+    tone(freqOf(q.clef, target), 0.45);
+
+    const base = WHITE_SEMI[q.n];
+    let lead = "正しくは", extra = "";
+    if (q.acc) extra = `調号の${symOf(q.acc)}がつく音`;
+    if (q.acc && semi === base) lead = "おしい。正しくは";
+    else if (!q.acc && q.key && Math.abs(semi - base) === 1) { lead = "おしい。正しくは"; extra = "調号はつかない音"; }
+    else if ((semi === 0 && target === 12) || (semi === 12 && target === 0)) lead = "おしい。正しくは";
+    setMsg(lead, qName(q), extra);
+    advanceId = setTimeout(next, q.key ? 2300 : 1900);
+  }
+
+  function next() {
+    qi++;
+    if (qi >= ROUND) showResult();
+    else showQuestion();
+  }
+
+  // 見直し用の音名（赤：正しい答え、灰色に斜線：選んだ答え）
+  function drawReviewLabels(g, x, ly, q, chosen) {
+    const a = el("text", { x, y: ly, "text-anchor": "middle", fill: "var(--red)",
+      "font-family": "Klee One, Hiragino Maru Gothic ProN, sans-serif", "font-weight": 600, "font-size": 20 }, g);
+    a.textContent = qLabel(q);
+    const b = el("text", { x, y: ly + 25, "text-anchor": "middle", fill: "var(--muted)", "font-size": 16 }, g);
+    b.textContent = semiName(chosen, q.key);
+    const w = b.getComputedTextLength() / 2 + 4;
+    el("line", { x1: x - w, x2: x + w, y1: ly + 26, y2: ly + 12, stroke: "var(--red)", "stroke-width": 1.2, "stroke-linecap": "round", opacity: .85 }, g);
+  }
+
+  function showResult() {
+    state = "result";
+    stopTick();
+    renderTimer();
+    [...answersEl.children].forEach((li) => li.classList.remove("now"));
+    const correct = results.filter((r) => r.ok).length;
+    const score = results.reduce((s, r) => s + r.pts, 0);
+    const misses = results.filter((r) => !r.ok);
+
+    // 自己ベストは「記号 × 調号の組み合わせ」ごと
+    const bestKey = `onpu-best-${mode}${sharpOn ? "-sharp" : ""}${flatOn ? "-flat" : ""}`;
+    const prevRaw = store.get(bestKey);
+    const prev = prevRaw === null ? null : Number(prevRaw);
+    const isNewBest = prev === null || score > prev;
+    if (isNewBest) store.set(bestKey, String(score));
+
+    show(keysEl, false);
+    show(staffEl, false);
+    show(msgEl, false);
+    show(resultEl, true);
+    show(actionBtn, true);
+    actionBtn.textContent = "もう一度";
+    resultEl.replaceChildren();
+
+    const p = (cls, text) => {
+      const n = document.createElement("p");
+      n.className = cls;
+      n.textContent = text;
+      resultEl.appendChild(n);
+      return n;
+    };
+    const scoreEl = p("score", String(score));
+    const unit = document.createElement("small");
+    unit.textContent = "点";
+    scoreEl.appendChild(unit);
+    p("sub", `${ROUND}問中 ${correct}問正解、合計 ${fmtSec(totalMs)}`);
+    if (prev !== null) {
+      if (isNewBest) p("best new", `自己ベスト更新（これまで ${prev}点）`);
+      else p("best", `自己ベスト ${prev}点`);
+    }
+
+    if (misses.length) {
+      p("review-label", "まちがえた音（赤が正しい答え）");
+      if (accOn()) {
+        // 調号が問題ごとにちがうので、1問ずつ小さな譜面にする
+        const grid = document.createElement("div");
+        grid.className = "review-grid";
+        resultEl.appendChild(grid);
+        const x = CLEFS.bass.sigX + MAX_KEY * SHARP_STEP + 40;  // 調号がいちばん長いときに合わせる
+        const width = x + 44;
+        const ly = yOf(-2) + 42;                                  // いちばん低い音（加線のド）の下
+        for (const m of misses) {
+          const svg = el("svg", { role: "img" }, grid);
+          svg.setAttribute("aria-label", `${CLEFS[m.clef].name}、正しくは${qName(m)}、答えは${semiName(m.chosen, m.key)}`);
+          const { g } = drawStaff(svg, width, m.clef, [{ n: m.n, x }], m.key);
+          svg.setAttribute("viewBox", `0 34 ${width} ${ly + 30 - 34}`);
+          drawReviewLabels(g, x, ly, m, m.chosen);
+        }
+      } else {
+        for (const clef of ["treble", "bass"]) {
+          const list = misses.filter((m) => m.clef === clef);
+          if (!list.length) continue;
+          const gap = 62, x0 = 122;
+          const width = Math.max(360, x0 + 6 + list.length * gap);
+          const svg = el("svg", { class: "review", role: "img" }, resultEl);
+          svg.setAttribute("aria-label", `${CLEFS[clef].name}でまちがえた音：` + list.map(qName).join("、"));
+          const { g } = drawStaff(svg, width, clef, list.map((m, i) => ({ n: m.n, x: x0 + i * gap })));
+          // 音名は、いちばん低い音符（または第1線）のすぐ下にそろえる
+          const ly = Math.max(BOTTOM, ...list.map((m) => yOf(posOf(m)))) + 42;
+          svg.setAttribute("viewBox", `0 34 ${width} ${ly + 30 - 34}`);
+          list.forEach((m, i) => drawReviewLabels(g, x0 + i * gap, ly, m, m.chosen));
+        }
+      }
+    }
+    actionBtn.focus({ preventScroll: true });
+  }
+
+  actionBtn.addEventListener("click", () => {
+    if (state === "result") showReady();
+    if (state === "ready") start();
+  });
+
+  document.addEventListener("keydown", (e) => {
+    if (e.metaKey || e.ctrlKey || e.altKey || e.repeat) return;
+    if (state === "question") {
+      let semi = KEY_SEMI[e.key.toLowerCase()];
+      if (semi === undefined && /^[1-8]$/.test(e.key)) semi = WHITE_SEMI[Number(e.key) - 1];
+      if (semi !== undefined) { e.preventDefault(); answer(semi); }
+      return;
+    }
+    if ((state === "ready" || state === "result") && (e.key === "Enter" || e.key === " ")) {
+      const a = document.activeElement;
+      // ボタンにフォーカスがあるときはそのボタンに任せる（ただし選択中のモードのタブならスタート）
+      if (a && a.tagName === "BUTTON" && !(a.classList.contains("mode") && a.dataset.mode === mode)) return;
+      e.preventDefault();
+      actionBtn.click();
+    }
+  });
+
+  renderSound();
+  renderModes();
+  setBlackKeys(false, 0);
+  showReady();
+})();
+</script>
+</body>
+</html>
