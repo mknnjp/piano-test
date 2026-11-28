@@ -17,17 +17,17 @@ import {
 import { makeQueue } from './lib/quiz2-logic.js';
 
 // ---------- DOM helpers ----------
-function $<T extends Element = HTMLElement>(sel: string): T {
+const $ = <T extends Element = HTMLElement>(sel: string): T => {
   const el = document.querySelector<T>(sel);
   if (!el) throw new Error(`要素が見つかりません: ${sel}`);
   return el;
 }
 
-function el<K extends keyof SVGElementTagNameMap>(
+const el = <K extends keyof SVGElementTagNameMap>(
   tag: K,
   attrs: SVGAttributes = {},
   parent?: Element
-): SVGElementTagNameMap[K] {
+): SVGElementTagNameMap[K] => {
   const n = createSVGElement(tag, attrs);
   if (parent) parent.appendChild(n);
   return n;
@@ -68,13 +68,13 @@ interface SigItem {
 }
 
 // notes: [{ n, x }] / key: 調号。戻り値の sig は調号の各記号の位置
-function drawStaff(
+const drawStaff = (
   svg: SVGSVGElement,
   width: number,
   clef: Clef,
   notes: { n: number; x: number }[],
   key = 0
-): { g: SVGGElement; sig: { items: SigItem[]; end: number } } {
+): { g: SVGGElement; sig: { items: SigItem[]; end: number } } => {
   svg.replaceChildren();
   svg.setAttribute('viewBox', `0 34 ${width} 176`);
   const g = el('g', {}, svg);
@@ -88,7 +88,7 @@ function drawStaff(
   return { g, sig };
 }
 
-function drawKeySig(g: SVGGElement, clef: Clef, key: number): { items: SigItem[]; end: number } {
+const drawKeySig = (g: SVGGElement, clef: Clef, key: number): { items: SigItem[]; end: number } => {
   const items: SigItem[] = [];
   const c = CLEFS[clef];
   if (!key) return { items, end: c.sigX };
@@ -107,7 +107,7 @@ function drawKeySig(g: SVGGElement, clef: Clef, key: number): { items: SigItem[]
   return { items, end: c.sigX + Math.abs(key) * stepX + 6 };
 }
 
-function drawNote(g: SVGGElement, pos: number, x: number): void {
+const drawNote = (g: SVGGElement, pos: number, x: number): void => {
   const ledger: number[] = [];
   for (let p = -2; p >= pos; p -= 2) ledger.push(p);   // 下の加線
   for (let p = 10; p <= pos; p += 2) ledger.push(p);   // 上の加線
@@ -127,7 +127,7 @@ interface PenOptions {
   delay?: number;
 }
 
-function pen(parent: Element, d: string, opt: PenOptions = {}): SVGPathElement {
+const pen = (parent: Element, d: string, opt: PenOptions = {}): SVGPathElement => {
   const p = el('path', {
     d, fill: 'none', stroke: opt.color || 'var(--red)', 'stroke-width': opt.width || 3.2,
     'stroke-linecap': 'round', 'stroke-linejoin': 'round',
@@ -143,7 +143,7 @@ function pen(parent: Element, d: string, opt: PenOptions = {}): SVGPathElement {
 }
 
 // 手で描いたような、少しはみ出す丸
-function handLoop(cx: number, cy: number, rx: number, ry: number): string {
+const handLoop = (cx: number, cy: number, rx: number, ry: number): string => {
   const N = 56;
   const start = -Math.PI * (0.55 + Math.random() * 0.15);
   const sweep = Math.PI * 2 * 1.1;
@@ -160,7 +160,7 @@ function handLoop(cx: number, cy: number, rx: number, ry: number): string {
   return d;
 }
 
-function checkMark(cx: number, cy: number, s = 1): string {
+const checkMark = (cx: number, cy: number, s = 1): string => {
   return `M${cx - 15 * s} ${cy - 1 * s} Q${cx - 9 * s} ${cy + 5 * s} ${cx - 4 * s} ${cy + 15 * s} ` +
     `Q${cx + 6 * s} ${cy - 8 * s} ${cx + 25 * s} ${cy - 27 * s}`;
 }
@@ -169,7 +169,7 @@ function checkMark(cx: number, cy: number, s = 1): string {
 let soundOn = store.get('onpu-sound') !== 'off';
 let actx: AudioContext | null = null;
 
-function tone(freq: number, delay = 0): void {
+const tone = (freq: number, delay = 0): void => {
   if (!soundOn) return;
   try {
     actx = actx || new (window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
@@ -193,7 +193,7 @@ function tone(freq: number, delay = 0): void {
   } catch { /* ignore */ }
 }
 
-function renderSound(): void {
+const renderSound = (): void => {
   soundBtn.setAttribute('aria-pressed', String(soundOn));
   soundBtn.textContent = soundOn ? '音：オン' : '音：オフ';
 }
@@ -226,7 +226,7 @@ for (const bk of BLACK_KEYS) {
 }
 
 // 黒鍵：♯と♭モードのときだけ答えに使う。名前は調号に合わせて♯か♭で表示
-function setBlackKeys(enabled: boolean, key: number): void {
+const setBlackKeys = (enabled: boolean, key: number): void => {
   for (const bk of BLACK_KEYS) {
     const b = keyBySemi[bk.semi];
     b.disabled = !enabled;
@@ -272,7 +272,7 @@ let tickId: ReturnType<typeof setInterval> | undefined;
 let advanceId: ReturnType<typeof setTimeout> | undefined;
 let sigItems: SigItem[] = [];
 
-function renderModes(): void {
+const renderModes = (): void => {
   for (const b of modeBtns) b.setAttribute('aria-checked', String(b.dataset.mode === mode));
   for (const b of accBtns) b.setAttribute('aria-pressed', String(b.dataset.acc === 'sharp' ? sharpOn : flatOn));
   hintEl.textContent = accOn()
@@ -298,7 +298,7 @@ for (const b of accBtns) {
   });
 }
 
-function renderAnswers(): void {
+const renderAnswers = (): void => {
   answersEl.replaceChildren();
   for (let i = 0; i < ROUND; i++) {
     const li = document.createElement('li');
@@ -308,13 +308,13 @@ function renderAnswers(): void {
   }
 }
 
-function renderTimer(): void {
+const renderTimer = (): void => {
   const ms = totalMs + (state === 'question' ? performance.now() - qStart : 0);
   timerEl.textContent = fmtSec(ms);
 }
-function stopTick(): void { clearInterval(tickId); tickId = undefined; }
+const stopTick = (): void => { clearInterval(tickId); tickId = undefined; };
 
-function showReady(): void {
+const showReady = (): void => {
   clearTimeout(advanceId);
   stopTick();
   state = 'ready';
@@ -337,7 +337,7 @@ function showReady(): void {
     : '全10問。1問100点で、速く答えるほど点が高くなります';
 }
 
-function start(): void {
+const start = (): void => {
   show(actionBtn, false);
   show(keysEl, true);
   show(resultEl, false);
@@ -348,7 +348,7 @@ function start(): void {
   tickId = setInterval(renderTimer, 100);
 }
 
-function showQuestion(): void {
+const showQuestion = (): void => {
   for (const b of Object.values(keyBySemi)) {
     b.classList.remove('picked-wrong', 'is-answer', 'down');
     b.querySelector('.ring')?.remove();
@@ -364,7 +364,7 @@ function showQuestion(): void {
   qStart = performance.now();
 }
 
-function setMsg(lead: string, name: string, extra: string): void {
+const setMsg = (lead: string, name: string, extra: string): void => {
   msgEl.replaceChildren(document.createTextNode(lead));
   if (name) {
     const s = document.createElement('span');
@@ -380,7 +380,7 @@ function setMsg(lead: string, name: string, extra: string): void {
   }
 }
 
-function answer(semi: number): void {
+const answer = (semi: number): void => {
   if (state !== 'question') return;
   if (!accOn() && !WHITE_SEMI.includes(semi)) return;
   const ms = performance.now() - qStart;
@@ -446,14 +446,14 @@ function answer(semi: number): void {
   advanceId = setTimeout(next, q.key ? 2300 : 1900);
 }
 
-function next(): void {
+const next = (): void => {
   qi++;
   if (qi >= ROUND) showResult();
   else showQuestion();
 }
 
 // 見直し用の音名（赤：正しい答え、灰色に斜線：選んだ答え）
-function drawReviewLabels(g: SVGGElement, x: number, ly: number, q: Question, chosen: number): void {
+const drawReviewLabels = (g: SVGGElement, x: number, ly: number, q: Question, chosen: number): void => {
   const a = el('text', {
     x, y: ly, 'text-anchor': 'middle', fill: 'var(--red)',
     'font-family': 'Klee One, Hiragino Maru Gothic ProN, sans-serif', 'font-weight': 600, 'font-size': 20
@@ -465,7 +465,7 @@ function drawReviewLabels(g: SVGGElement, x: number, ly: number, q: Question, ch
   el('line', { x1: x - w, x2: x + w, y1: ly + 26, y2: ly + 12, stroke: 'var(--red)', 'stroke-width': 1.2, 'stroke-linecap': 'round', opacity: .85 }, g);
 }
 
-function showResult(): void {
+const showResult = (): void => {
   state = 'result';
   stopTick();
   renderTimer();

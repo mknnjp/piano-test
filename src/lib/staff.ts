@@ -14,7 +14,7 @@ export interface ClefOptions {
   fontSize?: number;
 }
 
-export function renderStaffLines(svg: SVGSVGElement, layout: StaffLayout): void {
+export const renderStaffLines = (svg: SVGSVGElement, layout: StaffLayout): void => {
   const { lineSpacing, staffTop, staffLeft, staffWidth } = layout;
   for (let i = 0; i < 5; i += 1) {
     const y = staffTop + i * lineSpacing;
@@ -28,23 +28,23 @@ export function renderStaffLines(svg: SVGSVGElement, layout: StaffLayout): void 
     });
     svg.appendChild(line);
   }
-}
+};
 
-export function positionToY(
+export const positionToY = (
   position: number,
   layout: Pick<StaffLayout, 'lineSpacing' | 'staffTop'>
-): number {
+): number => {
   return layout.staffTop + (4 - position / 2) * layout.lineSpacing;
-}
+};
 
-export function stepToY(
+export const stepToY = (
   step: number,
   layout: Pick<StaffLayout, 'lineSpacing' | 'staffTop'>
-): number {
+): number => {
   return layout.staffTop + step * (layout.lineSpacing / 2);
-}
+};
 
-export function renderClef(svg: SVGSVGElement, options: ClefOptions): void {
+export const renderClef = (svg: SVGSVGElement, options: ClefOptions): void => {
   const { symbol, x, y, fontSize = 48 } = options;
   const clef = createSVGElement('text', {
     x,
@@ -54,4 +54,4 @@ export function renderClef(svg: SVGSVGElement, options: ClefOptions): void {
   });
   clef.textContent = symbol;
   svg.appendChild(clef);
-}
+};

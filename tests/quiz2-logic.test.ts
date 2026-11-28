@@ -4,13 +4,13 @@ import { accOf } from '../src/lib/accidentals.js';
 import { ROUND } from '../src/lib/staff2.js';
 
 // 決定的な疑似乱数（LCG）
-function lcg(seed: number) {
+const lcg = (seed: number) => {
   let s = seed;
   return () => {
     s = (s * 1664525 + 1013904223) >>> 0;
     return s / 0x100000000;
   };
-}
+};
 
 describe('makeQueue', () => {
   it('調号なし・単一記号: 8音を必ず1回ずつ含み、長さは ROUND', () => {

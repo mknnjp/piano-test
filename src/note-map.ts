@@ -11,15 +11,15 @@ const STAFF_LAYOUT: StaffLayout = {
 
 const LABEL_OFFSET = 24;
 
-function getElement<T extends Element>(id: string): T {
+const getElement = <T extends Element>(id: string): T => {
   const element = document.getElementById(id);
   if (!element) {
     throw new Error(`要素が見つかりません: #${id}`);
   }
   return element as unknown as T;
-}
+};
 
-function renderNotes(svg: SVGSVGElement, config: StaffDataEntry): void {
+const renderNotes = (svg: SVGSVGElement, config: StaffDataEntry): void => {
   const noteX = STAFF_LAYOUT.staffLeft + 110;
   const labelXRight = STAFF_LAYOUT.staffLeft + STAFF_LAYOUT.staffWidth + LABEL_OFFSET;
   const labelXLeft = STAFF_LAYOUT.staffLeft - LABEL_OFFSET;
@@ -47,9 +47,9 @@ function renderNotes(svg: SVGSVGElement, config: StaffDataEntry): void {
     label.textContent = `${note.name} / ${note.label}`;
     svg.appendChild(label);
   });
-}
+};
 
-function renderList(listElement: HTMLElement, notes: StaffNote[]): void {
+const renderList = (listElement: HTMLElement, notes: StaffNote[]): void => {
   listElement.innerHTML = '';
   notes.forEach((note) => {
     const row = document.createElement('div');
@@ -57,7 +57,7 @@ function renderList(listElement: HTMLElement, notes: StaffNote[]): void {
     row.innerHTML = `<span>${note.name}</span><span>${note.label}</span>`;
     listElement.appendChild(row);
   });
-}
+};
 
 staffData.forEach((config) => {
   const svg = getElement<SVGSVGElement>(config.id);

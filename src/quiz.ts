@@ -13,13 +13,13 @@ const state: QuizState = {
   questionCount: 0
 };
 
-function getElement<T extends Element>(id: string): T {
+const getElement = <T extends Element>(id: string): T => {
   const element = document.getElementById(id);
   if (!element) {
     throw new Error(`要素が見つかりません: #${id}`);
   }
   return element as unknown as T;
-}
+};
 
 const staffElement = getElement<SVGSVGElement>('staff');
 const questionIndex = getElement<HTMLDivElement>('question-index');
@@ -35,7 +35,7 @@ const STAFF_LAYOUT: StaffLayout = {
   staffWidth: 260
 };
 
-function renderNote(note: QuizNote): void {
+const renderNote = (note: QuizNote): void => {
   staffElement.innerHTML = '';
   renderStaffLines(staffElement, STAFF_LAYOUT);
 
@@ -79,9 +79,9 @@ function renderNote(note: QuizNote): void {
     accidental.textContent = note.accidental;
     staffElement.appendChild(accidental);
   }
-}
+};
 
-function createButtons(): void {
+const createButtons = (): void => {
   answerButtons.innerHTML = '';
   NOTE_POOL.forEach((note) => {
     const button = document.createElement('button');
@@ -91,25 +91,25 @@ function createButtons(): void {
     button.addEventListener('click', () => handleAnswer(note.spelled));
     answerButtons.appendChild(button);
   });
-}
+};
 
-function setButtonsDisabled(disabled: boolean): void {
+const setButtonsDisabled = (disabled: boolean): void => {
   answerButtons.querySelectorAll('button').forEach((button) => {
     button.disabled = disabled;
   });
-}
+};
 
 type StatusType = 'correct' | 'incorrect';
 
-function updateStatus(message: string, type: StatusType | null): void {
+const updateStatus = (message: string, type: StatusType | null): void => {
   status.textContent = message;
   status.className = 'status';
   if (type) {
     status.classList.add(type);
   }
-}
+};
 
-function handleAnswer(spelled: string): void {
+const handleAnswer = (spelled: string): void => {
   if (!state.currentNote) {
     return;
   }
@@ -121,9 +121,9 @@ function handleAnswer(spelled: string): void {
       : `不正解です。正しい答えは「${state.currentNote.spelled}」です。`,
     isCorrect ? 'correct' : 'incorrect'
   );
-}
+};
 
-function nextQuestion(): void {
+const nextQuestion = (): void => {
   state.questionCount += 1;
   state.currentNote = pickRandomNote();
   questionIndex.textContent = `第${state.questionCount}問`;
@@ -131,7 +131,7 @@ function nextQuestion(): void {
   updateStatus('', null);
   setButtonsDisabled(false);
   renderNote(state.currentNote);
-}
+};
 
 createButtons();
 nextButton.addEventListener('click', nextQuestion);

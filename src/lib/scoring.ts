@@ -3,7 +3,7 @@ const FULL_SEC = 1.5;
 const PER_SEC = 10;
 const MIN_PTS = 40;
 
-export function pointsFor(ok: boolean, sec: number): number {
+export const pointsFor = (ok: boolean, sec: number): number => {
   if (!ok) return 0;
   return Math.max(MIN_PTS, Math.min(100, Math.round(100 - Math.max(0, sec - FULL_SEC) * PER_SEC)));
-}
+};

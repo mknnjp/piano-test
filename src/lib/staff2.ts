@@ -15,10 +15,10 @@ export interface Question {
   acc: number;
 }
 
-export function posOf(q: Pick<Question, 'clef' | 'n'>): number {
+export const posOf = (q: Pick<Question, 'clef' | 'n'>): number => {
   return NOTES[q.n].step + CLEFS[q.clef].shift;
-}
+};
 
-export function yOf(pos: number): number {
+export const yOf = (pos: number): number => {
   return BOTTOM - pos * SP / 2;
-}
+};
