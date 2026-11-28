@@ -34,10 +34,10 @@ export const CLEFS: Record<Clef, ClefDef> = {
   bass: { d: F_CLEF, shift: 5, octave: 0.5, sigX: 76, sigShift: -2, name: 'ヘ音記号' },
 };
 
-export const MODES: Mode[] = ['treble', 'bass', 'mix'];
+export const MODES: readonly Mode[] = ['treble', 'bass', 'mix'];
 
 // step: 第1線を0として、線と間を1つずつ数えた位置（ト音記号のとき）
-export const NOTES: NoteDef[] = [
+export const NOTES: readonly NoteDef[] = [
   { name: 'ド', short: '低いド', long: '低いほうのド', step: -2, letter: 'C' },
   { name: 'レ', step: -1, letter: 'D' },
   { name: 'ミ', step: 0, letter: 'E' },
@@ -49,10 +49,10 @@ export const NOTES: NoteDef[] = [
 ];
 
 // 白鍵：低いドからの半音の数
-export const WHITE_SEMI = [0, 2, 4, 5, 7, 9, 11, 12];
+export const WHITE_SEMI: readonly number[] = [0, 2, 4, 5, 7, 9, 11, 12];
 
 // 黒鍵：after = 何本目の白鍵の右か
-export const BLACK_KEYS: BlackKeyDef[] = [
+export const BLACK_KEYS: readonly BlackKeyDef[] = [
   { semi: 1, after: 1, sharp: ['ド', '♯'], flat: ['レ', '♭'] },
   { semi: 3, after: 2, sharp: ['レ', '♯'], flat: ['ミ', '♭'] },
   { semi: 6, after: 4, sharp: ['ファ', '♯'], flat: ['ソ', '♭'] },
@@ -62,10 +62,10 @@ export const BLACK_KEYS: BlackKeyDef[] = [
 
 // 調号：♯は ファ→ド→ソ→レ…、♭は シ→ミ→ラ→レ… の順につく
 export const MAX_KEY = 4;                            // ♯・♭は4つまで
-export const SHARP_ORDER = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
-export const FLAT_ORDER = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
-export const SHARP_POS = [8, 5, 9, 6, 3, 7, 4];      // ト音記号での位置（第1線=0）
-export const FLAT_POS = [4, 7, 3, 6, 2, 5, 1];
+export const SHARP_ORDER: readonly string[] = ['F', 'C', 'G', 'D', 'A', 'E', 'B'];
+export const FLAT_ORDER: readonly string[] = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
+export const SHARP_POS: readonly number[] = [8, 5, 9, 6, 3, 7, 4];
+export const FLAT_POS: readonly number[] = [4, 7, 3, 6, 2, 5, 1];
 export const SHARP_STEP = 19;
 export const FLAT_STEP = 17;        // 並べる間隔(px)
 

@@ -10,7 +10,7 @@ export const rand = (n: number, rng: Rng = Math.random): number => {
   return Math.floor(rng() * n);
 };
 
-export const pick = <T>(a: T[], rng: Rng = Math.random): T => {
+export const pick = <T>(a: readonly T[], rng: Rng = Math.random): T => {
   return a[rand(a.length, rng)];
 };
 
@@ -22,7 +22,7 @@ export const shuffle = <T>(a: T[], rng: Rng = Math.random): T[] => {
   return a;
 };
 
-export const halfAndHalf = (rng: Rng = Math.random): ('treble' | 'bass')[] => {
+export const halfAndHalf = (rng: Rng = Math.random): readonly ('treble' | 'bass')[] => {
   return shuffle(
     Array.from({ length: ROUND }, (_, i) => (i < ROUND / 2 ? 'treble' : 'bass')),
     rng
@@ -60,9 +60,9 @@ export const makeQueue = (
   m: Mode,
   opts: AccOptions,
   rng: Rng = Math.random
-): Question[] => {
+): readonly Question[] => {
   const accOn = opts.sharpOn || opts.flatOn;
-  let items: Question[] = [];
+  let items: readonly Question[] = [];
   for (let tries = 0; tries < 200; tries++) {
     if (accOn) {
       const clefs = m === 'mix' ? halfAndHalf(rng) : Array<('treble' | 'bass')>(ROUND).fill(m);

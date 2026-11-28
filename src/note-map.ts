@@ -49,7 +49,7 @@ const renderNotes = (svg: SVGSVGElement, config: StaffDataEntry): void => {
   });
 };
 
-const renderList = (listElement: HTMLElement, notes: StaffNote[]): void => {
+const renderList = (listElement: HTMLElement, notes: readonly StaffNote[]): void => {
   listElement.innerHTML = '';
   notes.forEach((note) => {
     const row = document.createElement('div');

@@ -25,10 +25,10 @@ export interface StaffDataEntry {
   listId: string;
   name: string;
   clefSymbol: string;
-  notes: StaffNote[];
+  notes: readonly StaffNote[];
 }
 
-export const NOTE_POOL: NotePoolEntry[] = [
+export const NOTE_POOL: readonly NotePoolEntry[] = [
   { spelled: 'C', label: 'ド / C', accidental: '' },
   { spelled: 'D♭', label: 'レ♭ / D♭', accidental: '♭' },
   { spelled: 'E♭', label: 'ミ♭ / E♭', accidental: '♭' },
@@ -73,7 +73,7 @@ export const STAFF_CONFIG: Record<Clef, StaffConfigEntry> = {
   }
 };
 
-export const staffData: StaffDataEntry[] = [
+export const staffData: readonly StaffDataEntry[] = [
   {
     id: 'treble-staff',
     listId: 'treble-list',

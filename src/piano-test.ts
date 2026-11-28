@@ -72,7 +72,7 @@ const drawStaff = (
   svg: SVGSVGElement,
   width: number,
   clef: Clef,
-  notes: { n: number; x: number }[],
+  notes: readonly { n: number; x: number }[],
   key = 0
 ): { g: SVGGElement; sig: { items: SigItem[]; end: number } } => {
   svg.replaceChildren();
@@ -257,7 +257,7 @@ const accOn = () => sharpOn || flatOn;
 
 type State = 'ready' | 'question' | 'feedback' | 'result';
 let state: State = 'ready';
-let queue: Question[] = [];
+let queue: readonly Question[] = [];
 let qi = 0;
 interface Result extends Question {
   chosen: number;
@@ -270,7 +270,7 @@ let qStart = 0;
 let totalMs = 0;
 let tickId: ReturnType<typeof setInterval> | undefined;
 let advanceId: ReturnType<typeof setTimeout> | undefined;
-let sigItems: SigItem[] = [];
+let sigItems: readonly SigItem[] = [];
 
 const renderModes = (): void => {
   for (const b of modeBtns) b.setAttribute('aria-checked', String(b.dataset.mode === mode));
