@@ -16,13 +16,27 @@
   --hand: "Klee One", "Hiragino Maru Gothic ProN", "Yu Gothic", sans-serif;
 }
 
+* {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
+  margin: 0;
+  padding: 0;
   background: var(--paper);
   color: var(--ink);
   font-family: "Zen Kaku Gothic New", "Hiragino Sans", "Yu Gothic", "Meiryo", sans-serif;
   font-weight: 500;
   line-height: 1.6;
   -webkit-tap-highlight-color: transparent;
+}
+
+[hidden] {
+  display: none !important;
 }
 
 .sheet {

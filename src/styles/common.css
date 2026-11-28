@@ -1,24 +1,11 @@
 :root {
   font-family: "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
   color: #1f2937;
-  background: #f8fafc;
-}
-
-* {
-  box-sizing: border-box;
-}
-
-html {
-  -webkit-text-size-adjust: 100%;
 }
 
 body {
   margin: 0;
   padding: 24px;
-}
-
-[hidden] {
-  display: none !important;
 }
 
 .container {
@@ -31,24 +18,4 @@ body {
 
 h1 {
   font-size: 24px;
-}
-
-a {
-  color: #1d4ed8;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-a:hover {
-  text-decoration: underline;
-}
-
-button {
-  font: inherit;
-  cursor: pointer;
-}
-
-button:focus-visible {
-  outline: 3px solid currentColor;
-  outline-offset: 2px;
 }

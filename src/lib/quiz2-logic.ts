@@ -38,6 +38,7 @@ export interface AccOptions {
   flatOn: boolean;
 }
 
+// ---------- 出題 ----------
 // 調号ありの1問：オンになっている♯・♭から1つ選び（両方オンならどちらか）、数は1〜4個。
 // 6割は調号がつく音、4割はつかない音を出す（「この音にはつかない」も見分ける練習）
 export function accQuestion(clef: 'treble' | 'bass', opts: AccOptions, rng: Rng = Math.random): Question {

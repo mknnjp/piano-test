@@ -27,6 +27,8 @@ export interface BlackKeyDef {
   flat: [string, string];
 }
 
+// shift: 音符の位置のずれ / octave: 鳴らす音の高さ / sigX: 調号の書き始め / sigShift: 調号の位置のずれ
+// ト音記号は ド4〜ド5、ヘ音記号は ド3〜ド4（真ん中のド）
 export const CLEFS: Record<Clef, ClefDef> = {
   treble: { d: G_CLEF, shift: 0, octave: 1, sigX: 70, sigShift: 0, name: 'ト音記号' },
   bass: { d: F_CLEF, shift: 5, octave: 0.5, sigX: 76, sigShift: -2, name: 'ヘ音記号' },
@@ -65,7 +67,7 @@ export const FLAT_ORDER = ['B', 'E', 'A', 'D', 'G', 'C', 'F'];
 export const SHARP_POS = [8, 5, 9, 6, 3, 7, 4];      // ト音記号での位置（第1線=0）
 export const FLAT_POS = [4, 7, 3, 6, 2, 5, 1];
 export const SHARP_STEP = 19;
-export const FLAT_STEP = 17;
+export const FLAT_STEP = 17;        // 並べる間隔(px)
 
 export const KEY_SEMI: Record<string, number> = {
   a: 0, w: 1, s: 2, e: 3, d: 4, f: 5, t: 6, g: 7, y: 8, h: 9, u: 10, j: 11, k: 12,

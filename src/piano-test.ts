@@ -67,6 +67,7 @@ interface SigItem {
   ry: number;
 }
 
+// notes: [{ n, x }] / key: 調号。戻り値の sig は調号の各記号の位置
 function drawStaff(
   svg: SVGSVGElement,
   width: number,
